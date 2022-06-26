@@ -114,6 +114,6 @@ io.on('connection', (socket: any) => {
 });
 
 
-server.listen(8998, () => {
+server.listen(3000, () => {
 	console.log('GET')
 });
