@@ -1,12 +1,11 @@
-// import * as express from "express";
-// import * as http from "http";
-// import * as WebSocket from "ws";
-// import { board1 } from "../Boards/stringBoards";
-// import { BoardBuilder } from "../Domain/Boards/Services/BoardBuilder";
-// import { BoardMovementVerifier } from "../Domain/Boards/Services/BoardMovementVerifier";
-// import { Player } from "../Domain/Players/Entities/Player";
-// import { PlayerStatus } from "../Domain/Players/Enums/PlayerStatus";
-// import { PlayerMover } from "../Domain/Players/Services/PlayerMover";
+import { board1 } from "../Boards/stringBoards";
+import { BoardBuilder } from "../Domain/Boards/Services/BoardBuilder";
+import { BoardMovementVerifier } from "../Domain/Boards/Services/BoardMovementVerifier";
+import { Player } from "../Domain/Players/Entities/Player";
+import { PlayerStatus } from "../Domain/Players/Enums/PlayerStatus";
+import { PlayerMover } from "../Domain/Players/Services/PlayerMover";
+
+import { Direction } from "../Domain/Players/Enums/Direction";
 
 // const app = express();
 // const server = http.createServer(app);
@@ -80,40 +79,77 @@
 // 	}
 // 	return s4() + s4() + "-" + s4();
 // };
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http');
+const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
 	cors: {
 		origin: "*",
-		methods: "*"
-	}
+		methods: "*",
+	},
 });
 
-const rooms = { 0: [] as any[]}
+const rooms = { 0: [] as any[] };
+const board = BoardBuilder.create(board1);
+const players = [] as Player[];
+var playerMover = new PlayerMover();
 
-app.get('/', (req:any, res: any) => {
-  res.send("Hello")
+app.get("/", (req: any, res: any) => {
+	res.send("Hello");
 });
 
-io.on('connection', (socket: any) => {
-  console.log("Connect", socket.id)
+io.on("connection", (socket: any) => {
+	socket.on("game", () => {
+		var newPlayer = Player.create(1, 1);
+		newPlayer.UUID = socket.id;
+		players.push(newPlayer);
 
-  rooms[0].push({ id: socket.id })
+		const v = JSON.stringify({
+			board,
+			players,
+			self: newPlayer,
+		});
+		io.emit("gameaction", v);
+	});
 
-  socket.on('video', (video: any) => {
-	const broadcastObj = { id: socket.id, video };
-	io.emit("video", broadcastObj);
-  });
+	socket.on("video", (video: any) => {
+		const broadcastObj = { id: socket.id, video };
+		io.emit("video", broadcastObj);
+	});
 
-  socket.on('disconnect', () => {
-	  console.log("Disconnect", socket.id)
-  })
+	socket.on("movement", (msg: any) => {
+		var direction = JSON.parse(msg);
+		var player = players.find((p) => p.UUID === socket.id)!;
+
+		if (player) {
+			var newPosition = playerMover.moveByKey(player, direction.key);
+			var movement = BoardMovementVerifier.verify(board, newPosition);
+
+			if (movement.canMove) {
+				player.position = newPosition;
+
+				if (movement.points && movement.points > 0)
+					player.points += movement.points;
+
+				if (movement.isPowerUp) player.status = PlayerStatus.GODMODE;
+			}
+
+			const v = JSON.stringify({
+				board,
+				players,
+			});
+
+			io.emit("gameaction", v);
+		}
+	});
+
+	socket.on("disconnect", () => {
+		console.log("Disconnect", socket.id);
+	});
 });
 
-
-server.listen(process.env.PORT || 3000, () => {
-	console.log('GET')
+server.listen(process.env.PORT || 3001, () => {
+	console.log("GET");
 });
