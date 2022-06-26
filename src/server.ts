@@ -4,82 +4,8 @@ import { BoardMovementVerifier } from "../Domain/Boards/Services/BoardMovementVe
 import { Player } from "../Domain/Players/Entities/Player";
 import { PlayerStatus } from "../Domain/Players/Enums/PlayerStatus";
 import { PlayerMover } from "../Domain/Players/Services/PlayerMover";
-
-import { Direction } from "../Domain/Players/Enums/Direction";
 import { Position } from "../Domain/Commons/Position";
 
-// const app = express();
-// const server = http.createServer(app);
-
-// const wss = new WebSocket.Server({ server });
-
-// const board = BoardBuilder.create(board1);
-// const players = [] as Player[];
-// var playerMover = new PlayerMover();
-
-// wss.on("connection", (ws: WebSocket) => {
-// 	console.log("Connected: trws")
-
-// 	ws.on("close", function close(c) {
-// 		console.log("disconnected", c);
-// 	});
-
-// 	ws.on("message", (msg: any) => {
-// 		var message = JSON.parse(msg);
-// 		if (!message.self) return;
-// 		var player = players.find((p) => p.UUID === message.self.UUID)!;
-
-// 		if (player) {
-// 			var newPosition = playerMover.moveByKey(player, message.key);
-// 			var movement = BoardMovementVerifier.verify(board, newPosition);
-
-// 			if (movement.canMove) {
-// 				player.position = newPosition;
-
-// 				if (movement.points && movement.points > 0)
-// 					player.points += movement.points;
-
-// 				if (movement.isPowerUp) player.status = PlayerStatus.GODMODE;
-// 			}
-
-// 			const v = JSON.stringify({
-// 				board,
-// 				players,
-// 			});
-
-// 			//@ts-ignore
-// 			wss.broadcast(v);
-// 		}
-// 	});
-
-// 	var newPlayer = Player.create(1, 1);
-// 	//@ts-ignore
-// 	newPlayer.UUID = wss.getUniqueID();
-// 	players.push(newPlayer);
-
-// 	const v = JSON.stringify({
-// 		board,
-// 		players,
-// 		self: newPlayer,
-// 	});
-
-// 	ws.send(v);
-// });
-
-// //start our server
-// server.listen(process.env.PORT || 8998, () => {
-// 	console.log(`Server started on port ${8998} :)`);
-// });
-
-// //@ts-ignore
-// wss.getUniqueID = function () {
-// 	function s4() {
-// 		return Math.floor((1 + Math.random()) * 0x10000)
-// 			.toString(16)
-// 			.substring(1);
-// 	}
-// 	return s4() + s4() + "-" + s4();
-// };
 const express = require("express");
 const app = express();
 const http = require("http");
@@ -92,7 +18,6 @@ const io = new Server(server, {
 	},
 });
 
-const rooms = { 0: [] as any[] };
 let board = BoardBuilder.create(board1);
 let players = [] as Player[];
 var playerMover = new PlayerMover();
@@ -102,6 +27,7 @@ app.get("/", (req: any, res: any) => {
 });
 
 io.on("connection", (socket: any) => {
+	console.log("CONNECTED", socket.id);
 	socket.on("reset", () => {
 		board = BoardBuilder.create(board1);
 		players = players.map((player) => ({
@@ -164,9 +90,30 @@ io.on("connection", (socket: any) => {
 
 	socket.on("disconnect", () => {
 		console.log("Disconnect", socket.id);
+		const index = players.findIndex((player) => player.UUID === socket.id);
+		players.splice(index, 1);
+		io.emit("disconnected", socket.id);
 	});
 });
 
 server.listen(process.env.PORT || 3001, () => {
-	console.log("GET");
+	console.log("listen to", process.env.PORT || 3001);
 });
+
+// const server = createSocket("udp4");
+
+// server.on("error", (err) => {
+// 	console.log(`server error:\n${err.stack}`);
+// 	server.close();
+// });
+
+// server.on("message", (msg, rinfo) => {
+// 	console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+// });
+
+// server.on("listening", () => {
+// 	const address = server.address();
+// 	console.log(`server listening ${address.address}:${address.port}`);
+// });
+
+// server.bind(41234);
