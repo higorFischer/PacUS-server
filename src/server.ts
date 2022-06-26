@@ -103,7 +103,7 @@ const io = new Server(server, {
 const rooms = { 0: [] as any[]}
 
 app.get('/', (req:any, res: any) => {
-  res.sendFile(__dirname + '/index.html');
+  res.send("Hello")
 });
 
 io.on('connection', (socket: any) => {
