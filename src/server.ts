@@ -6,6 +6,7 @@ import { PlayerStatus } from "../Domain/Players/Enums/PlayerStatus";
 import { PlayerMover } from "../Domain/Players/Services/PlayerMover";
 
 import { Direction } from "../Domain/Players/Enums/Direction";
+import { Position } from "../Domain/Commons/Position";
 
 // const app = express();
 // const server = http.createServer(app);
@@ -92,8 +93,8 @@ const io = new Server(server, {
 });
 
 const rooms = { 0: [] as any[] };
-const board = BoardBuilder.create(board1);
-const players = [] as Player[];
+let board = BoardBuilder.create(board1);
+let players = [] as Player[];
 var playerMover = new PlayerMover();
 
 app.get("/", (req: any, res: any) => {
@@ -101,6 +102,22 @@ app.get("/", (req: any, res: any) => {
 });
 
 io.on("connection", (socket: any) => {
+	socket.on("reset", () => {
+		board = BoardBuilder.create(board1);
+		players = players.map((player) => ({
+			...player,
+			position: Position.create(1, 1),
+			status: PlayerStatus.NORMAL,
+		}));
+
+		const v = JSON.stringify({
+			board,
+			players,
+		});
+
+		io.emit("gameaction", v);
+	});
+
 	socket.on("game", () => {
 		var newPlayer = Player.create(1, 1);
 		newPlayer.UUID = socket.id;

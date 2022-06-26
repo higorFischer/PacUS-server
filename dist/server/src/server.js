@@ -6,6 +6,7 @@ const BoardMovementVerifier_1 = require("../Domain/Boards/Services/BoardMovement
 const Player_1 = require("../Domain/Players/Entities/Player");
 const PlayerStatus_1 = require("../Domain/Players/Enums/PlayerStatus");
 const PlayerMover_1 = require("../Domain/Players/Services/PlayerMover");
+const Position_1 = require("../Domain/Commons/Position");
 // const app = express();
 // const server = http.createServer(app);
 // const wss = new WebSocket.Server({ server });
@@ -74,13 +75,22 @@ const io = new Server(server, {
     },
 });
 const rooms = { 0: [] };
-const board = BoardBuilder_1.BoardBuilder.create(stringBoards_1.board1);
-const players = [];
+let board = BoardBuilder_1.BoardBuilder.create(stringBoards_1.board1);
+let players = [];
 var playerMover = new PlayerMover_1.PlayerMover();
 app.get("/", (req, res) => {
     res.send("Hello");
 });
 io.on("connection", (socket) => {
+    socket.on("reset", () => {
+        board = BoardBuilder_1.BoardBuilder.create(stringBoards_1.board1);
+        players = players.map((player) => (Object.assign(Object.assign({}, player), { position: Position_1.Position.create(1, 1), status: PlayerStatus_1.PlayerStatus.NORMAL })));
+        const v = JSON.stringify({
+            board,
+            players,
+        });
+        io.emit("gameaction", v);
+    });
     socket.on("game", () => {
         var newPlayer = Player_1.Player.create(1, 1);
         newPlayer.UUID = socket.id;
