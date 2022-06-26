@@ -64,12 +64,6 @@
 // 	}
 // 	return s4() + s4() + "-" + s4();
 // };
-// //@ts-ignore
-// wss.broadcast = function broadcast(msg) {
-// 	wss.clients.forEach(function each(client) {
-// 		client.send(msg);
-// 	});
-// };
 const express = require('express');
 const app = express();
 const http = require('http');
@@ -78,12 +72,12 @@ const { Server } = require("socket.io");
 const io = new Server(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
+        methods: "*"
     }
 });
 const rooms = { 0: [] };
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.send("Hello");
 });
 io.on('connection', (socket) => {
     console.log("Connect", socket.id);
