@@ -90,7 +90,7 @@ io.on('connection', (socket) => {
         console.log("Disconnect", socket.id);
     });
 });
-server.listen(8998, () => {
+server.listen(process.env.PORT || 3000, () => {
     console.log('GET');
 });
 //# sourceMappingURL=server.js.map
